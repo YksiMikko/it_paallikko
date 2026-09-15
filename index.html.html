@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Päivä laboratorion IT-päällikkönä</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0F1720;
+    --bg-panel:#161F29;
+    --bg-card:#1C2733;
+    --bg-card-2:#20303B;
+    --border:#2B3946;
+    --border-soft:#233240;
+    --text:#E7EEF2;
+    --text-muted:#8FA3B0;
+    --green:#3DDC97;
+    --amber:#F5A623;
+    --red:#E85D5D;
+    --cyan:#5EC8E8;
+    --purple:#A78BE0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ background:var(--bg); }
+  body{
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4,.font-display{ font-family:'Space Grotesk',sans-serif; }
+  .font-mono,.option-mono,code{ font-family:'IBM Plex Mono',monospace; }
+  code{ background:rgba(94,200,232,0.12); color:var(--cyan); padding:0.05rem 0.35rem; border-radius:4px; font-size:0.85em; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  button:focus-visible, select:focus-visible, .tab-btn:focus-visible{
+    outline:2px solid var(--cyan); outline-offset:2px;
+  }
+  .hidden{ display:none !important; }
+
+  /* header */
+  .app-header{
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, var(--bg-panel), var(--bg));
+  }
+  .gauge-label{ font-size:0.72rem; color:var(--text-muted); letter-spacing:0.01em; }
+  .clock-value{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:1.5rem; letter-spacing:0.02em; }
+  .ring-track{ stroke:var(--border); }
+  .stress-track{ background:var(--border-soft); border-radius:999px; overflow:hidden; }
+  #stressBarFill{ height:100%; border-radius:999px; transition:width .5s ease, background .5s ease; }
+
+  /* tabs */
+  .tab-btn{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    color:var(--text-muted);
+    padding:0.65rem 1.1rem;
+    border-bottom:2px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+    white-space:nowrap;
+  }
+  .tab-btn:hover{ color:var(--text); }
+  .tab-btn-active{ color:var(--text); border-bottom-color:var(--cyan); }
+
+  /* layout */
+  .tickets-layout{ display:grid; grid-template-columns:1fr; gap:1.25rem; }
+  @media(min-width:900px){ .tickets-layout{ grid-template-columns:1.6fr 1fr; } }
+  .panel-inner{ max-width:920px; margin:0 auto; }
+  .panel-title{ font-size:1.15rem; font-weight:600; margin-bottom:0.9rem; }
+
+  /* ticket card */
+  .ticket-card{
+    background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    border-left:3px solid var(--border);
+    border-radius:10px;
+    padding:1.25rem 1.35rem;
+  }
+  .ticket-card h3{ font-size:1.1rem; font-weight:600; margin:0.4rem 0 0.55rem; }
+  .ticket-card p{ color:var(--text-muted); line-height:1.6; font-size:0.93rem; margin-bottom:0.9rem; }
+  .ticket-badge{
+    display:inline-block; font-size:0.7rem; font-weight:600;
+    padding:0.2rem 0.55rem; border-radius:5px;
+  }
+  .badge-normal{ background:rgba(94,200,232,0.14); color:var(--cyan); }
+  .badge-task{ background:rgba(61,220,151,0.14); color:var(--green); }
+  .badge-urgent{ background:rgba(232,93,93,0.16); color:var(--red); }
+  .incident-card{ border-left-color:var(--red); }
+
+  .btn-primary{
+    background:var(--cyan); color:#0B1620; font-weight:600; font-size:0.9rem;
+    padding:0.6rem 1.1rem; border-radius:8px; transition:filter .15s ease, transform .1s ease;
+  }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-primary:active{ transform:translateY(1px); }
+
+  /* option cards */
+  .option-list{ display:flex; flex-direction:column; gap:0.55rem; margin:0.7rem 0; }
+  .option-card{
+    text-align:left; background:var(--bg-card-2); border:1px solid var(--border-soft);
+    border-radius:8px; padding:0.7rem 0.9rem; font-size:0.9rem; color:var(--text);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .option-card:hover:not(:disabled){ border-color:var(--cyan); background:#243541; }
+  .option-card-wrong{ border-color:var(--red); background:rgba(232,93,93,0.08); }
+  .option-card-text{ display:block; }
+
+  /* feedback */
+  .feedback-box{
+    border-radius:8px; padding:0.75rem 0.95rem; font-size:0.88rem; line-height:1.55;
+    margin:0.7rem 0; border:1px solid var(--border-soft);
+  }
+  .feedback-box p{ margin:0; color:inherit; }
+  .feedback-box p + p{ margin-top:0.5rem; }
+  .feedback-good{ background:rgba(61,220,151,0.1); border-color:rgba(61,220,151,0.35); color:#BFF3DC; }
+  .feedback-bad{ background:rgba(232,93,93,0.1); border-color:rgba(232,93,93,0.35); color:#F6CACA; }
+  .feedback-meh{ background:rgba(245,166,35,0.1); border-color:rgba(245,166,35,0.35); color:#FBDFA8; }
+  .feedback-timeout{ font-weight:600; margin-bottom:0.4rem !important; }
+  .hint-ok{ color:var(--green); font-size:0.9rem; font-weight:500; }
+
+  /* incident timer */
+  .timer-track{ height:5px; background:var(--border-soft); border-radius:999px; overflow:hidden; margin-bottom:0.9rem; }
+  .timer-fill{ height:100%; width:100%; background:var(--amber); transition:width .2s linear; }
+
+  /* side box / log */
+  .side-box{ background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:1rem 1.1rem; margin-bottom:1rem; }
+  .side-box-title{ font-size:0.78rem; color:var(--text-muted); margin-bottom:0.25rem; }
+  .side-box-value{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.2rem; }
+  .log-list{ display:flex; flex-direction:column; gap:0.65rem; max-height:320px; overflow-y:auto; }
+  .log-entry{ border-bottom:1px solid var(--border-soft); padding-bottom:0.6rem; font-size:0.82rem; }
+  .log-time{ font-family:'IBM Plex Mono',monospace; color:var(--cyan); font-size:0.78rem; margin-right:0.4rem; }
+  .log-text{ color:var(--text); }
+  .log-deltas{ display:flex; gap:0.5rem; margin-top:0.3rem; flex-wrap:wrap; }
+  .delta{ font-size:0.74rem; font-weight:600; padding:0.05rem 0.4rem; border-radius:4px; }
+  .delta-pos{ color:var(--green); background:rgba(61,220,151,0.1); }
+  .delta-neg{ color:var(--red); background:rgba(232,93,93,0.1); }
+  .log-empty{ color:var(--text-muted); font-size:0.85rem; }
+  .empty-state{ color:var(--text-muted); font-size:0.92rem; padding:1.5rem 0; text-align:center; }
+
+  /* task steps */
+  .task-step{ background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:1.1rem 1.25rem; margin-top:1.1rem; }
+  .task-step h4{ font-size:1rem; font-weight:600; margin-bottom:0.5rem; }
+  .task-step-desc{ color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:0.4rem; }
+
+  /* network diagram */
+  .network-diagram-wrap{ background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:1rem; }
+  .node-box{ fill:#22323F; stroke:var(--border); stroke-width:1.5; }
+  .node-box-fw{ fill:#2A2033; stroke:#7A5AE0; stroke-width:1.5; }
+  .node-box-office{ fill:#1E2A33; stroke:var(--cyan); stroke-width:1.5; opacity:0.9; }
+  .node-box-mw{ fill:#2A2820; stroke:var(--purple); stroke-width:1.5; }
+  .node-box-device{ fill:#1E2E27; stroke:var(--green); stroke-width:1.5; }
+  .node-box-huolto{ fill:#2A2420; stroke:var(--amber); stroke-width:1.5; opacity:0.9; }
+  .vlan-box{ fill:rgba(94,200,232,0.04); stroke:var(--border); stroke-width:1.5; stroke-dasharray:4 4; }
+  .vlan-title{ fill:var(--cyan); font-size:13px; font-family:'Space Grotesk',sans-serif; font-weight:600; }
+  .node-label{ fill:var(--text); font-size:13px; font-family:'Inter',sans-serif; }
+  .node-label-sm{ fill:var(--text-muted); font-size:11px; font-family:'IBM Plex Mono',monospace; }
+  .legend{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.8rem; font-size:0.78rem; color:var(--text-muted); }
+  .legend-dot{ display:inline-block; width:8px; height:8px; border-radius:999px; margin-right:0.35rem; }
+
+  /* HL7 explainer */
+  .hl7-explainer{ display:flex; align-items:stretch; gap:0.9rem; background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:1.1rem; flex-wrap:wrap; }
+  .hl7-explainer-card{ flex:1; min-width:220px; }
+  .hl7-explainer-icon{ font-size:1.5rem; margin-bottom:0.3rem; }
+  .hl7-explainer-label{ font-family:'Space Grotesk',sans-serif; font-weight:600; margin-bottom:0.35rem; }
+  .hl7-explainer-card p{ color:var(--text-muted); font-size:0.87rem; line-height:1.55; }
+  .hl7-explainer-arrow{ align-self:center; font-size:1.3rem; color:var(--cyan); }
+
+  /* HL7 raw message blocks */
+  .hl7-msgs{ display:flex; gap:0.9rem; flex-wrap:wrap; margin-top:0.9rem; }
+  .hl7-msg-block{ flex:1; min-width:260px; background:var(--bg-card-2); border:1px solid var(--border-soft); border-radius:10px; padding:0.85rem 0.95rem; }
+  .hl7-msg-title{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.85rem; margin-bottom:0.55rem; color:var(--text); }
+  .hl7-line{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; line-height:1.7; white-space:pre-wrap; word-break:break-all; }
+  .hl7-seg{ font-weight:700; padding:0 0.15rem; border-radius:3px; margin-right:0.1rem; }
+  .hl7-seg-msh{ color:var(--text-muted); }
+  .hl7-seg-pid{ color:var(--cyan); background:rgba(94,200,232,0.12); }
+  .hl7-seg-obr{ color:var(--amber); background:rgba(245,166,35,0.12); }
+  .hl7-seg-obx{ color:var(--green); background:rgba(61,220,151,0.12); }
+  .hl7-rest{ color:var(--text-muted); }
+
+  /* mapping puzzle */
+  .mapping-grid{ display:flex; flex-direction:column; gap:0.7rem; margin:0.8rem 0; }
+  .mapping-row{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:0.7rem; background:var(--bg-card-2); border:1px solid var(--border-soft); border-radius:8px; padding:0.65rem 0.85rem; }
+  @media(max-width:640px){ .mapping-row{ grid-template-columns:1fr; } .mapping-arrow{ transform:rotate(90deg); justify-self:start; } }
+  .mapping-source-label{ font-size:0.88rem; font-weight:500; }
+  .mapping-source-hint{ font-size:0.74rem; color:var(--text-muted); margin-top:0.25rem; font-family:'IBM Plex Mono',monospace; word-break:break-all; }
+  .mapping-arrow{ color:var(--cyan); font-weight:600; }
+  .mapping-select{
+    background:var(--bg-panel); color:var(--text); border:1px solid var(--border-soft);
+    border-radius:6px; padding:0.45rem 0.5rem; font-size:0.85rem; width:100%;
+  }
+
+  /* fade in */
+  .fade-in{ animation:fadeIn .35s ease; }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+  @media (prefers-reduced-motion: reduce){ .fade-in{ animation:none; } }
+
+  /* end of day overlay */
+  #endOfDayOverlay{
+    position:fixed; inset:0; background:rgba(6,10,14,0.86); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; padding:1.25rem; z-index:50;
+  }
+  .end-card{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:14px;
+    padding:1.75rem; max-width:560px; width:100%; max-height:88vh; overflow-y:auto;
+  }
+  .end-title{ font-size:1.4rem; font-weight:700; margin-bottom:0.6rem; }
+  .end-text{ color:var(--text-muted); line-height:1.6; font-size:0.93rem; margin-bottom:0.6rem; }
+  .end-text-muted{ font-style:italic; }
+  .end-stats{ display:flex; gap:1rem; margin:1.1rem 0; }
+  .end-stat{ flex:1; background:var(--bg-card); border:1px solid var(--border-soft); border-radius:10px; padding:0.9rem; text-align:center; }
+  .end-stat-label{ font-size:0.78rem; color:var(--text-muted); margin-bottom:0.3rem; }
+  .end-stat-value{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.6rem; }
+  .end-log-title{ font-size:0.85rem; color:var(--text-muted); margin:1rem 0 0.5rem; }
+  .end-log-list{ max-height:220px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="app-header sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-lg font-semibold leading-tight">🧬 Päivä laboratorion IT-päällikkönä</h1>
+        <p class="text-xs" style="color:var(--text-muted)">Kliinisen laboratorion IT-valvomo</p>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="text-center">
+          <div class="gauge-label">Työaika</div>
+          <div class="clock-value" id="clockDisplay">08:00</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="gauge-label mb-1">Toimintavarmuus</div>
+          <div class="relative" style="width:56px;height:56px;">
+            <svg width="56" height="56" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke-width="7" class="ring-track" />
+              <circle id="uptimeRing" cx="32" cy="32" r="26" fill="none" stroke-width="7"
+                stroke-linecap="round" transform="rotate(-90 32 32)" />
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold" id="uptimeValue">100%</div>
+          </div>
+        </div>
+        <div class="flex flex-col items-center" style="width:110px;">
+          <div class="gauge-label mb-1">Stressitaso</div>
+          <div class="stress-track w-full" style="height:9px;">
+            <div id="stressBarFill" style="width:0%;background:#3DDC97;"></div>
+          </div>
+          <div class="text-xs mt-1 font-semibold" id="stressValue">0%</div>
+        </div>
+      </div>
+    </div>
+    <nav class="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
+      <button class="tab-btn tab-btn-active" data-tab="tickets">🎫 Tiketit / Tehtävälista</button>
+      <button class="tab-btn" data-tab="verkko">🧭 Verkko ja Palomuuri</button>
+      <button class="tab-btn" data-tab="hl7">✉️ Sanomaliikenne (HL7)</button>
+    </nav>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    <section id="panel-tickets" class="tab-panel"></section>
+    <section id="panel-verkko" class="tab-panel hidden"></section>
+    <section id="panel-hl7" class="tab-panel hidden"></section>
+  </main>
+
+</div>
+
+<div id="endOfDayOverlay" class="hidden">
+  <div class="end-card" id="endOfDayContent"></div>
+</div>
+
+<script>
+// ===================== UTIL =====================
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function minutesToClock(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+// ===================== DATA: INCIDENTS =====================
+
+const INCIDENT_POOL = [
+  {
+    id: 'tulostin',
+    title: 'Tarraluuppitulostin ei vastaa',
+    desc: 'Näytteenoton tarratulostin on jäänyt jumiin. Näytteitä ei voi tunnistaa ilman tarroja, ja jonotusaula alkaa täyttyä.',
+    options: [
+      { text: 'Käynnistä tulostin uudelleen ja tarkista paperirulla', quality: 'good', uptime: 4, stress: 2,
+        feedback: 'Hyvä refleksi! Suurin osa tulostinongelmista ratkeaa perusvianmäärityksellä — uudelleenkäynnistys ja tarkistus veivät vain muutaman minuutin.' },
+      { text: 'Tilaa heti uusi tulostin varmuuden vuoksi', quality: 'meh', uptime: 1, stress: 5,
+        feedback: 'Uusi tulostin saapuu joskus ensi viikolla, mutta se ei auta juuri nyt. Kannattaa aina kokeilla nopeaa vianmääritystä ennen isompia päätöksiä.' },
+      { text: 'Jätä huomiotta, ehtii huomennakin', quality: 'bad', uptime: -10, stress: 8,
+        feedback: 'Näytteitä kertyy tunnistamattomina, ja vaara sekaantumisesta kasvaa. Tarraongelmat vaikuttavat suoraan potilasturvallisuuteen — niitä ei voi jättää odottamaan.' },
+    ],
+  },
+  {
+    id: 'hl7versio',
+    title: 'Analysaattori lähettää tuloksia väärässä muodossa',
+    desc: 'Hematologia-analysaattori alkoi yhtäkkiä lähettää tuloksia HL7-muodossa, jota laboratoriojärjestelmä ei osaa tulkita.',
+    options: [
+      { text: 'Tarkista laitteen HL7-versioasetus ja korjaa se järjestelmän odottamaksi', quality: 'good', uptime: 5, stress: 3,
+        feedback: 'Juurisyy löytyi ja korjattiin — laite ja järjestelmä puhuvat taas samaa kieltä. Tämä on täsmälleen oikea kohta korjata, ei kumpikaan pää.' },
+      { text: 'Käynnistä koko labran verkko uudelleen', quality: 'bad', uptime: -14, stress: 10,
+        feedback: 'Koko verkon uudelleenkäynnistys pudotti kaikki laitteet hetkeksi pois linjoilta eikä silti korjannut sanoman muotovirhettä. Ylimitoitettu toimenpide, joka aiheutti turhan katkoksen.' },
+      { text: 'Pyydä bioanalyytikkoja kirjaamaan tulokset käsin toistaiseksi', quality: 'meh', uptime: -2, stress: 4,
+        feedback: 'Väliaikaisratkaisu pitää työt liikkeessä, mutta juurisyy jää korjaamatta ja virhe todennäköisesti toistuu pian uudelleen.' },
+    ],
+  },
+  {
+    id: 'huoltopyynto',
+    title: 'Huoltoyhtiö pyytää laajempaa etäyhteyttä "nopeuden vuoksi"',
+    desc: 'Analysaattorin huoltoyritys soittaa ja pyytää pääsyä koko labran verkkoon, jotta "asiat sujuisivat jatkossa nopeammin".',
+    options: [
+      { text: 'Kieltäydy ja tarjoa edelleen rajattu, aikarajoitettu VPN-pääsy vain kyseiseen laitteeseen', quality: 'good', uptime: 3, stress: 2,
+        feedback: 'Oikea ratkaisu: pääsy annetaan aina vain sen verran ja sen ajan kuin tehtävä vaatii ("least privilege"). Yhden laitteen huoltoyhteys ei edellytä pääsyä koko verkkoon.' },
+      { text: 'Myönnä pyyntö, kunhan työ nopeutuu', quality: 'bad', uptime: -8, stress: 6,
+        feedback: 'Laaja pääsy ulkopuoliselle toimijalle kasvattaa koko laboratorion verkon hyökkäyspintaa merkittävästi yhden analysaattorin huollon vuoksi. Tietoturvariski ei ole sen arvoinen.' },
+      { text: 'Katkaise huollon etäyhteys kokonaan', quality: 'meh', uptime: -4, stress: 4,
+        feedback: 'Turvallista, mutta ylimitoitettua — nyt huolto ei pääse tekemään lainkaan diagnostiikkaa ja vikatilanteet venyvät jatkossa pidemmiksi.' },
+    ],
+  },
+  {
+    id: 'runkoverkko',
+    title: 'Ulkoverkon yhteys pätkii hetkittäin',
+    desc: 'Laboratorion laitteet tipahtelevat verkosta muutaman sekunnin ajaksi kerrallaan. Vika voi olla omassa laiteverkossa tai ulkoisessa operaattoriyhteydessä.',
+    options: [
+      { text: 'Selvitä ensin, näkyykö vika laajemmin, ja ilmoita asiasta verkko-operaattorille', quality: 'good', uptime: 3, stress: 2,
+        feedback: 'Oikea järjestys: ensin rajataan vian laajuus, sitten ohjataan se oikealle taholle. Ulkoinen runkoyhteys ei kuulu laboratorion omalle IT:lle, mutta tieto ongelmasta kylläkin.' },
+      { text: 'Yritä itse korjata verkko-operaattorin runkoyhteyden asetuksia', quality: 'bad', uptime: -6, stress: 9,
+        feedback: 'Ulkoinen runkoyhteys on verkko-operaattorin vastuulla — omat korjausyritykset siellä voivat pahentaa tilannetta ja sekoittaa vianselvityksen.' },
+      { text: 'Odota, että se korjaantuu itsestään', quality: 'meh', uptime: -3, stress: 3,
+        feedback: 'Joskus hetkellinen pätkintä menee itsestään ohi, mutta ilman ilmoitusta vika voi jatkua tunnistamattomana pidempään kuin tarpeen.' },
+    ],
+  },
+  {
+    id: 'potilastiedot',
+    title: 'Näytteen viivakoodi ei täsmää potilastietoihin',
+    desc: 'Bioanalyytikko soittaa hälyttyneenä: näytteen viivakoodi ja järjestelmässä näkyvät potilastiedot eivät täsmää.',
+    options: [
+      { text: 'Pysäytä näytteen käsittely ja varmista potilaan tunnistetiedot manuaalisesti', quality: 'good', uptime: 4, stress: 3,
+        feedback: 'Juuri näin: potilasturvallisuus menee aina nopeuden edelle. Tunnistevirhe pysäytetään ennen kuin tulos ehtii minnekään.' },
+      { text: 'Jatka analysointia, korjataan tiedot jälkikäteen', quality: 'bad', uptime: -20, stress: 15,
+        feedback: 'Tämä on vakavin mahdollinen virhe — väärän potilaan tiedoilla kulkeva tulos voi johtaa täysin väärään hoitopäätökseen. Epäselvä tunniste pysäytetään aina heti.' },
+      { text: 'Pyydä ottamaan näyte kokonaan uudelleen', quality: 'meh', uptime: 1, stress: 5,
+        feedback: 'Varovainen ja turvallinen valinta, mutta usein riittää tunnisteiden tarkistus — uusintanäyte kuormittaa potilasta ja henkilökuntaa tarpeettomasti.' },
+    ],
+  },
+  {
+    id: 'varmuuskopio',
+    title: 'Yöllinen varmuuskopiointi epäonnistui',
+    desc: 'Aamun tarkistuksessa selviää, että laboratoriojärjestelmän yöllinen varmuuskopiointi ei mennyt läpi.',
+    options: [
+      { text: 'Selvitä syy heti ja käynnistä varmuuskopiointi valvotusti uudelleen', quality: 'good', uptime: 4, stress: 3,
+        feedback: 'Varmuuskopiot ovat viimeinen turvaverkko — epäonnistuneen ajon syy kannattaa aina selvittää heti, ei jättää seuraavaan yöhön.' },
+      { text: 'Ohita, hoidetaan ensi viikolla', quality: 'bad', uptime: -8, stress: 4,
+        feedback: 'Jokainen päivä ilman toimivaa varmuuskopiota on päivä, jolloin potilastiedot voivat kadota palautumattomasti häiriötilanteessa.' },
+      { text: 'Kopioi tärkeimmät tiedot käsin muistitikulle "varmuuden vuoksi"', quality: 'meh', uptime: -1, stress: 6,
+        feedback: 'Salaamaton kopio irrallisella muistitikulla on tietosuojariski eikä korvaa hallittua varmuuskopiointijärjestelmää.' },
+    ],
+  },
+  {
+    id: 'ups',
+    title: 'Sähkökatkovaroitus — UPS-akkujen kunto tuntematon',
+    desc: 'Kiinteistöhuolto varoittaa mahdollisesta lyhyestä sähkökatkosta iltapäivällä. Analysaattoreiden UPS-akkujen kuntoa ei ole testattu hetkeen.',
+    options: [
+      { text: 'Testaa UPS-akkujen kunto ja varmista niiden riittävyys ennen kiireisiä ajoja', quality: 'good', uptime: 3, stress: 2,
+        feedback: 'Ennakoiva tarkistus juuri ennen riskihetkeä on halpaa vakuutusta — mahdollinen katko ei pysäytä kriittisiä analyysejä kesken.' },
+      { text: 'Ei tehdä mitään, tuskin siitä tulee mitään', quality: 'bad', uptime: -7, stress: 5,
+        feedback: 'Jos katko osuu kohdalle testaamattoman UPS:n kanssa, kesken jäävät ajot voivat aiheuttaa sekä laitevaurioita että menetettyjä näytteitä.' },
+      { text: 'Sammuta kaikki analysaattorit varmuuden vuoksi jo etukäteen', quality: 'meh', uptime: -4, stress: 3,
+        feedback: 'Ylivarovainen ratkaisu aiheuttaa turhan käyttökatkon, vaikka katko ei olisi edes toteutunut. Kohdistettu tarkistus riittäisi.' },
+    ],
+  },
+  {
+    id: 'kayttooikeudet',
+    title: 'Käyttäjä pyytää pääkäyttäjän oikeuksia',
+    desc: 'Yksi bioanalyytikoista pyytää pääkäyttäjän oikeuksia laboratoriojärjestelmään, "jotta työt sujuisivat nopeammin".',
+    options: [
+      { text: 'Myönnä vain työtehtävän edellyttämät, roolikohtaiset oikeudet', quality: 'good', uptime: 3, stress: 1,
+        feedback: 'Oikeuksien myöntäminen roolin mukaan pienentää virheiden ja väärinkäytösten riskiä, mutta ei silti hidasta normaalia työtä.' },
+      { text: 'Myönnä pääkäyttäjän oikeudet suoraan', quality: 'bad', uptime: -6, stress: 3,
+        feedback: 'Tarpeettoman laajat oikeudet yhdelle käyttäjälle kasvattavat riskiä, että virhe tai tunnusten vuoto vahingoittaa koko järjestelmää.' },
+      { text: 'Kieltäydy oikeuksista kokonaan', quality: 'meh', uptime: -2, stress: 3,
+        feedback: 'Liian tiukka linja jumittaa arjen työt — oikea tarve olisi kannattanut selvittää ja myöntää ainakin osa tarvituista oikeuksista.' },
+    ],
+  },
+  {
+    id: 'tuntematonkoodi',
+    title: 'Tuntematon tutkimuskoodi asiakasjärjestelmästä',
+    desc: 'Uusi asiakasjärjestelmä lähettää tutkimustilauksia omalla sisäisellä koodillaan ("LAB0042") sen sijaan, että käyttäisi yleistä tutkimusnimikkeistöä ("B-PVK"). Interface engine ei tunnista koodia, ja tilaukset jäävät käsittelemättä.',
+    options: [
+      { text: 'Luo koodikonversiotaulukko (mäppäys) interface engineen asiakkaan koodien ja yleisen nimikkeistön välille', quality: 'good', uptime: 5, stress: 3,
+        feedback: 'Juuri oikea ratkaisu — koodimäppäys interface enginessä kääntää asiakkaan omat koodit yleiseksi nimikkeistöksi automaattisesti myös jatkossa, eikä ongelma toistu joka tilauksella.' },
+      { text: 'Pyydä asiakasta vaihtamaan koodistonsa yleiseen nimikkeistöön', quality: 'bad', uptime: -5, stress: 5,
+        feedback: 'Asiakasjärjestelmän koodiston muuttaminen ei ole labran IT:n käsissä eikä tapahdu nopeasti — tilaukset jäävät käsittelemättä koko sillä välin.' },
+      { text: 'Korjaa vain tämä yksittäinen tilaus käsin LIS:ssä', quality: 'meh', uptime: -1, stress: 3,
+        feedback: 'Yksittäisen tilauksen korjaaminen auttaa juuri nyt, mutta samat tuntemattomat koodit tukkivat jonon uudestaan jo huomenna.' },
+    ],
+  },
+  {
+    id: 'jumiutunutjono',
+    title: 'Jumiutunut sanomajono tukkii interface enginen',
+    desc: 'Yksi virheellisesti muotoiltu sanoma on jäänyt jumiin interface enginen pääjonoon. Kaikkien muidenkin laitteiden data on pysähtynyt sen perään, eikä yhtään uutta tulosta liiku eteenpäin.',
+    options: [
+      { text: 'Siirrä virheellinen sanoma poikkeusjonoon ja vapauta pääjono muille laitteille', quality: 'good', uptime: 6, stress: 3,
+        feedback: 'Oikea ratkaisu — virheellinen sanoma eristetään omaan poikkeusjonoon tarkempaa tutkimista varten, ja pääjono pääsee heti jatkamaan muiden laitteiden dataa.' },
+      { text: 'Käynnistä interface engine kokonaan uudelleen', quality: 'bad', uptime: -12, stress: 8,
+        feedback: 'Koko palvelun uudelleenkäynnistys katkaisee hetkeksi kaikkien laitteiden sanomaliikenteen, eikä jumiutunut sanoma välttämättä silti poistu jonosta — ongelma voi toistua saman tien.' },
+      { text: 'Odota, että jono purkautuu itsestään', quality: 'meh', uptime: -8, stress: 4,
+        feedback: 'Jumiutunut sanoma ei tyypillisesti poistu itsestään — jono pysyy tukossa ja data kertyy taakse yhä pidemmäksi ajaksi.' },
+    ],
+  },
+  {
+    id: 'haittaohjelmaepailys',
+    title: 'Epäilyttävää liikennettä analysaattorin ohjaustietokoneelta (mahdollinen haittaohjelma)',
+    desc: 'Verkonvalvonta hälyttää: yksi analysaattorin ohjaustietokoneista lähettää poikkeavaa liikennettä tuntemattomiin ulkoisiin osoitteisiin. Kyseessä voi olla haittaohjelma- tai kiristysohjelmatartunta (ransomware).',
+    options: [
+      { text: 'Eristä laitteen verkkoyhteys välittömästi kytkinportista, jätä virrat päälle ja ilmoita tietoturvatiimille', quality: 'good', uptime: 5, stress: 4,
+        feedback: 'Oikea toimintajärjestys: verkkoyhteyden katkaisu pysäyttää leviämisen ja mahdollisen tiedon vuotamisen heti, mutta virtojen jättäminen päälle säilyttää RAM-muistin sisällön — arvokasta todistusaineistoa tietoturvatiimin jälkitutkintaan. Ilmoitus käynnistää virallisen poikkeamaprosessin.' },
+      { text: 'Sammuta laite välittömästi virtakytkimestä', quality: 'bad', uptime: -10, stress: 10,
+        feedback: 'Hätiköity virtojen katkaisu tuhoaa RAM-muistissa olevan, usein arvokkaimman todistusaineiston (esim. salausavaimet, käynnissä olevat prosessit) ja vaikeuttaa jälkianalyysiä merkittävästi — eikä se silti poista mahdollista haittaohjelmaa levyltä.' },
+      { text: 'Anna käynnissä olevan analyysiajon valmistua loppuun ja tutki asiaa vasta sitten', quality: 'bad', uptime: -16, stress: 12,
+        feedback: 'Epäillyn tartunnan antaminen jatkaa toimintaansa kasvattaa riskiä, että haittaohjelma leviää muihin laitteisiin tai tiedot ehtivät salautua tai vuotaa ulos sillä välin. Epäily eristetään aina heti, ei vasta kun se sopii aikatauluun.' },
+    ],
+  },
+];
+
+// ===================== DATA: TASK 1 — VLAN, IP, VPN =====================
+
+const NETWORK_IP_OPTIONS = [
+  { value: '10.20.30.1', correct: false, feedback: 'Osoite 10.20.30.1 on jo varattu laite-VLAN 30:n yhdyskäytävälle (reitittimelle) — tämä aiheuttaisi osoitekonfliktin ja voisi kaataa koko aliverkon.' },
+  { value: '10.20.30.45', correct: true, feedback: 'Osoite on laitteille varatulla vapaalla alueella (10.20.30.10–.199) eikä ole kenenkään muun käytössä. Juuri oikea valinta.' },
+  { value: '10.20.30.255', correct: false, feedback: 'Osoite 10.20.30.255 on aliverkon broadcast-osoite — sitä ei voi koskaan antaa yksittäiselle laitteelle.' },
+  { value: '10.20.10.72', correct: false, feedback: 'Tämä osoite kuuluu toimistoverkkoon (VLAN 10), ei laite-VLAN 30:een. Laitteet ja toimistokoneet pidetään tarkoituksella eri verkkosegmenteissä, jotta yhden segmentin häiriö ei leviä toiseen.' },
+];
+
+const REMOTE_ACCESS_OPTIONS = [
+  { value: 'portforward', correct: false, feedback: 'Pysyvä porttiohjaus suoraan julkisesta internetistä laitteen IP-osoitteeseen jää päälle myös silloin, kun huoltoa ei tarvita — tämä on yksi yleisimmistä hyökkäysreiteistä lääkintälaitteita vastaan.' },
+  { value: 'vpn-scoped', correct: true, feedback: 'Aikarajoitettu ja valvottu VPN-yhteys, joka ulottuu vain laite-VLAN 30:een ja tähän yhteen analysaattoriin, toteuttaa "least privilege" -periaatteen: pääsy on olemassa vain tarpeen ajan ja vain siellä missä sitä tarvitaan.' },
+  { value: 'vpn-full', correct: false, feedback: 'Koko laboratorion verkon avaaminen ulkopuoliselle huoltoyritykselle VPN:n kautta on tarpeettoman laaja riski — pääsyn pitäisi ulottua vain siihen yhteen segmenttiin ja laitteeseen, jota huolto oikeasti tarvitsee.' },
+  { value: 'deny-all', correct: false, feedback: 'Kaikkien etäyhteyksien estäminen on turvallista, mutta tarpeettoman hidasta ja kallista — hallittu, aikarajoitettu VPN-yhteys on nykyaikainen ja turvallinen tapa mahdollistaa etähuolto.' },
+];
+
+// ===================== DATA: TASK 2 — HL7 SEGMENTS =====================
+
+const HL7_ORM_EXAMPLE = [
+  'MSH|^~\\&|LAAKARIASEMA|KOTORANTA|LIS|LABORATORIO|202609151200||ORM^O01|MSG00001|P|2.3',
+  'PID|1||010199-123A||Virtanen^Matti||19990101|M',
+  'OBR|1|||B-PVK^Perusverenkuva|||202609151200',
+];
+
+const HL7_ORU_EXAMPLE = [
+  'MSH|^~\\&|LIS|LABORATORIO|LAAKARIASEMA|KOTORANTA|202609151530||ORU^R01|MSG00002|P|2.3',
+  'PID|1||010199-123A||Virtanen^Matti||19990101|M',
+  'OBR|1|||B-PVK^Perusverenkuva|||202609151200',
+  'OBX|1|NM|B-Hb^Hemoglobiini||145|g/l|134-167|N',
+  'OBX|2|NM|B-Leuk^Leukosyytit||6.8|E9/l|3.4-8.2|N',
+];
+
+const HL7_SEGMENTS = [
+  { id: 'PID', label: 'PID — potilastiedot-segmentti', example: 'PID|1||010199-123A||Virtanen^Matti||19990101|M',
+    correct: 'PATIENT', wrongFeedback: 'Tulokset menivät naapurin koiralle! PID-segmentti kantaa potilaan tunnistetiedot — jos se kytkeytyy väärin, koko sanoma yhdistyy väärään potilaaseen.' },
+  { id: 'OBR', label: 'OBR — tutkimustilaus-segmentti', example: 'OBR|1|||B-PVK^Perusverenkuva|||202609151200',
+    correct: 'ORDER', wrongFeedback: 'OBR-segmentti kertoo, mitä tutkimusta pyydettiin. Väärä kytkentä tarkoittaa, että laboratorio ei tiedä, mitä analyysiä näytteelle pitäisi tehdä.' },
+  { id: 'OBX', label: 'OBX — tulosarvo-segmentti', example: 'OBX|1|NM|B-Hb^Hemoglobiini||145|g/l|134-167|N',
+    correct: 'RESULT', wrongFeedback: 'OBX-segmentti kuljettaa yksittäiset mittaustulokset, kuten hemoglobiiniarvon. Väärä kytkentä katkaisee tuloksen välittymisen kliinikolle asti.' },
+];
+
+const HL7_TARGET_OPTIONS = [
+  { value: '', label: '— valitse kohde —' },
+  { value: 'PATIENT', label: 'Potilaan henkilötiedot' },
+  { value: 'ORDER', label: 'Tutkimustilaus (lähete)' },
+  { value: 'RESULT', label: 'Tutkimustulokset ja mittausarvot' },
+  { value: 'BILLING', label: 'Laskutustiedot (ei käytössä tässä sanomassa)' },
+];
+
+function hl7SegClass(code) {
+  const c = code.toLowerCase();
+  if (c === 'msh') return 'hl7-seg-msh';
+  if (c === 'pid') return 'hl7-seg-pid';
+  if (c === 'obr') return 'hl7-seg-obr';
+  if (c === 'obx') return 'hl7-seg-obx';
+  return '';
+}
+
+function hl7MsgHtml(lines) {
+  return lines.map((line) => {
+    const pipeIdx = line.indexOf('|');
+    const code = pipeIdx === -1 ? line : line.slice(0, pipeIdx);
+    const rest = pipeIdx === -1 ? '' : line.slice(pipeIdx);
+    return `<div class="hl7-line"><span class="hl7-seg ${hl7SegClass(code)}">${escapeHtml(code)}</span><span class="hl7-rest">${escapeHtml(rest)}</span></div>`;
+  }).join('');
+}
+
+// ===================== DATA: BEATS =====================
+
+const BEATS_DEF = [
+  { type: 'intro', duration: 15 },
+  { type: 'task1', duration: 75 },
+  { type: 'incident', duration: 30 },
+  { type: 'task2', duration: 75 },
+  { type: 'incident', duration: 30 },
+  { type: 'lunch', duration: 45 },
+  { type: 'incident', duration: 30 },
+  { type: 'incident', duration: 45 },
+  { type: 'incident', duration: 45 },
+  { type: 'incident', duration: 45 },
+  { type: 'report', duration: 45 },
+];
+
+// ===================== STATE =====================
+
+let state = null;
+
+function newGame() {
+  const chosenIncidents = shuffle(INCIDENT_POOL).slice(0, 6);
+  let ic = 0;
+  const beats = BEATS_DEF.map((b) => {
+    if (b.type === 'incident') {
+      const incident = chosenIncidents[ic++];
+      return Object.assign({}, b, { incident: incident });
+    }
+    return Object.assign({}, b);
+  });
+
+  state = {
+    beats: beats,
+    beatIndex: 0,
+    timeMin: 480,
+    uptime: 100,
+    stress: 0,
+    activeTab: 'tickets',
+    gameOver: false,
+    task1: { ipChosen: null, ipCorrect: false, remoteChosen: null, remoteCorrect: false, done: false, wrongIpTries: [], wrongRemoteTries: [] },
+    task2: { mapping: {}, done: false, lastErrors: [] },
+    log: [],
+    incidentAnswered: false,
+    incidentChosenIndex: null,
+    incidentTimedOut: false,
+    incidentTimerId: null,
+    incidentTimeLeft: 12,
+  };
+}
+
+function currentBeat() {
+  return state.beats[state.beatIndex];
+}
+
+function beatStartTime(index) {
+  let t = 480;
+  for (let i = 0; i < index; i++) t += state.beats[i].duration;
+  return t;
+}
+
+function clamp(v) {
+  return Math.max(0, Math.min(100, v));
+}
+
+function addLog(text, uptimeDelta, stressDelta) {
+  state.log.unshift({
+    time: minutesToClock(state.timeMin),
+    text: text,
+    uptimeDelta: uptimeDelta,
+    stressDelta: stressDelta,
+  });
+}
+
+function applyDeltas(uptimeDelta, stressDelta, text) {
+  state.uptime = clamp(state.uptime + uptimeDelta);
+  state.stress = clamp(state.stress + stressDelta);
+  addLog(text, uptimeDelta, stressDelta);
+}
+
+function completeCurrentBeat(uptimeDelta, stressDelta, text) {
+  applyDeltas(uptimeDelta, stressDelta, text);
+  clearIncidentTimer();
+  state.beatIndex++;
+  if (state.beatIndex >= state.beats.length) {
+    state.timeMin = 960;
+    state.gameOver = true;
+  } else {
+    state.timeMin = beatStartTime(state.beatIndex);
+    state.incidentAnswered = false;
+    state.incidentChosenIndex = null;
+    state.incidentTimedOut = false;
+    state.incidentTimeLeft = 12;
+    const b = currentBeat();
+    if (b.type === 'task1' || b.type === 'task2') {
+      state.activeTab = b.type === 'task1' ? 'verkko' : 'hl7';
+    } else {
+      state.activeTab = 'tickets';
+    }
+  }
+  renderAll();
+}
+
+function clearIncidentTimer() {
+  if (state.incidentTimerId) {
+    clearInterval(state.incidentTimerId);
+    state.incidentTimerId = null;
+  }
+}
+
+function startIncidentTimer() {
+  clearIncidentTimer();
+  state.incidentTimeLeft = 12;
+  state.incidentTimerId = setInterval(() => {
+    state.incidentTimeLeft -= 0.2;
+    if (state.incidentTimeLeft <= 0) {
+      clearIncidentTimer();
+      const beat = currentBeat();
+      let worst = beat.incident.options[0];
+      beat.incident.options.forEach((o) => { if (o.uptime < worst.uptime) worst = o; });
+      answerIncident(beat.incident.options.indexOf(worst), true);
+      return;
+    }
+    const bar = document.getElementById('incidentTimerBar');
+    if (bar) bar.style.width = (state.incidentTimeLeft / 12 * 100) + '%';
+  }, 200);
+}
+
+// ===================== ACTIONS =====================
+
+function setActiveTab(tab) {
+  state.activeTab = tab;
+  renderAll();
+}
+
+function chooseIp(index) {
+  if (state.task1.ipCorrect) return;
+  const opt = NETWORK_IP_OPTIONS[index];
+  state.task1.ipChosen = index;
+  if (opt.correct) {
+    state.task1.ipCorrect = true;
+  } else if (state.task1.wrongIpTries.indexOf(index) === -1) {
+    state.task1.wrongIpTries.push(index);
+  }
+  renderAll();
+}
+
+function chooseRemote(index) {
+  if (state.task1.remoteCorrect) return;
+  const opt = REMOTE_ACCESS_OPTIONS[index];
+  state.task1.remoteChosen = index;
+  if (opt.correct) {
+    state.task1.remoteCorrect = true;
+  } else if (state.task1.wrongRemoteTries.indexOf(index) === -1) {
+    state.task1.wrongRemoteTries.push(index);
+  }
+  renderAll();
+}
+
+function finishTask1() {
+  state.task1.done = true;
+  completeCurrentBeat(8, -3, 'Uusi analysaattori kytkettiin laite-VLAN 30:een middlewaren kautta, ja huollolle avattiin aikarajoitettu, valvottu VPN-yhteys vain tähän laitteeseen.');
+}
+
+function setMapping(fieldId, value) {
+  state.task2.mapping[fieldId] = value;
+}
+
+function verifyMapping() {
+  const errors = [];
+  HL7_SEGMENTS.forEach((f) => {
+    const chosen = state.task2.mapping[f.id] || '';
+    if (chosen !== f.correct) {
+      errors.push({ field: f.id, message: f.wrongFeedback });
+    }
+  });
+  state.task2.lastErrors = errors;
+  if (errors.length === 0) {
+    state.task2.done = true;
+  } else {
+    state.stress = clamp(state.stress + 2);
+  }
+  renderAll();
+}
+
+function finishTask2() {
+  completeCurrentBeat(8, -2, 'Uusi asiakasyhteys muodostettiin — lähetteet (ORM^O01) ja tulosvastaukset (ORU^R01) kulkevat nyt oikein segmentti kerrallaan.');
+}
+
+function answerIncident(index, timedOut) {
+  if (state.incidentAnswered) return;
+  clearIncidentTimer();
+  state.incidentAnswered = true;
+  state.incidentChosenIndex = index;
+  state.incidentTimedOut = !!timedOut;
+  renderAll();
+}
+
+function continueAfterIncident() {
+  const beat = currentBeat();
+  const opt = beat.incident.options[state.incidentChosenIndex];
+  let text = opt.feedback;
+  if (state.incidentTimedOut) {
+    text = 'Et ehtinyt päättää ajoissa, joten tilanne eteni itsestään huonoimmalla mahdollisella tavalla. ' + text;
+  }
+  completeCurrentBeat(opt.uptime, opt.stress, beat.incident.title + ': ' + text);
+}
+
+function continueFlavor(uptimeDelta, stressDelta, text) {
+  completeCurrentBeat(uptimeDelta, stressDelta, text);
+}
+
+// ===================== RENDER: HEADER =====================
+
+function uptimeColor(v) {
+  if (v >= 70) return '#3DDC97';
+  if (v >= 40) return '#F5A623';
+  return '#E85D5D';
+}
+
+function stressColor(v) {
+  if (v <= 30) return '#3DDC97';
+  if (v <= 65) return '#F5A623';
+  return '#E85D5D';
+}
+
+function renderHeader() {
+  document.getElementById('clockDisplay').textContent = minutesToClock(state.timeMin);
+
+  const pct = state.uptime;
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - pct / 100);
+  const ring = document.getElementById('uptimeRing');
+  ring.style.strokeDasharray = c.toFixed(2);
+  ring.style.strokeDashoffset = offset.toFixed(2);
+  ring.style.stroke = uptimeColor(pct);
+  document.getElementById('uptimeValue').textContent = Math.round(pct) + '%';
+
+  const stressBar = document.getElementById('stressBarFill');
+  stressBar.style.width = state.stress + '%';
+  stressBar.style.background = stressColor(state.stress);
+  document.getElementById('stressValue').textContent = Math.round(state.stress) + '%';
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.classList.toggle('tab-btn-active', btn.dataset.tab === state.activeTab);
+  });
+}
+
+// ===================== RENDER: TICKETS TAB =====================
+
+function logEntryHtml(entry) {
+  const upSign = entry.uptimeDelta > 0 ? '+' : '';
+  const stSign = entry.stressDelta > 0 ? '+' : '';
+  return `
+    <li class="log-entry">
+      <span class="log-time">${entry.time}</span>
+      <span class="log-text">${entry.text}</span>
+      <div class="log-deltas">
+        ${entry.uptimeDelta ? `<span class="delta ${entry.uptimeDelta > 0 ? 'delta-pos' : 'delta-neg'}">Toimintavarmuus ${upSign}${entry.uptimeDelta}</span>` : ''}
+        ${entry.stressDelta ? `<span class="delta ${entry.stressDelta > 0 ? 'delta-neg' : 'delta-pos'}">Stressi ${stSign}${entry.stressDelta}</span>` : ''}
+      </div>
+    </li>`;
+}
+
+function renderTickets() {
+  const el = document.getElementById('panel-tickets');
+  if (state.gameOver) {
+    el.innerHTML = `<div class="empty-state">Työpäivä on päättynyt. Katso päivän yhteenveto.</div>`;
+    return;
+  }
+  const beat = currentBeat();
+  const remaining = state.beats.length - state.beatIndex;
+  let mainHtml = '';
+
+  if (beat.type === 'intro') {
+    mainHtml = `
+      <div class="ticket-card fade-in">
+        <div class="ticket-badge badge-normal">Aamu</div>
+        <h3>Uusi työpäivä valvomossa alkaa</h3>
+        <p>Kello on 08:00. Kahvi haisee ja monitorit hyrisevät — labran IT-päällikkönä pidät huolen siitä, että näytteet, laitteet ja tietoliikenne pysyvät kunnossa koko päivän.</p>
+        <button class="btn-primary" data-action="flavor-intro">Aloita työpäivä</button>
+      </div>`;
+  } else if (beat.type === 'task1') {
+    mainHtml = `
+      <div class="ticket-card fade-in">
+        <div class="ticket-badge badge-task">Tehtävä</div>
+        <h3>🔬 Uusi analysaattori saapuu labraan</h3>
+        <p>Huolto toi juuri uuden hematologia-analysaattorin. Se pitää liittää eristettyyn laite-VLAN 30:een middlewaren (ajojenhallinnan) kautta, ja huollolle pitää avata turvallinen etäyhteys — vasta sitten bioanalyytikot voivat ottaa laitteen käyttöön.</p>
+        ${state.task1.done
+          ? `<p class="hint-ok">✅ Tehtävä hoidettu Verkko ja Palomuuri -näkymässä.</p>`
+          : `<button class="btn-primary" data-action="goto-verkko">Avaa Verkko ja Palomuuri -näkymässä</button>`}
+      </div>`;
+  } else if (beat.type === 'task2') {
+    mainHtml = `
+      <div class="ticket-card fade-in">
+        <div class="ticket-badge badge-task">Tehtävä</div>
+        <h3>🏥 Uusi asiakas: Terveysasema Kotoranta</h3>
+        <p>Terveysasema haluaa alkaa lähettää sähköisiä laboratoriolähetteitä ja vastaanottaa tuloksia. HL7-sanomien segmentit (PID, OBR, OBX) pitää kytkeä oikein, jotta tiedot päätyvät oikeisiin kenttiin.</p>
+        ${state.task2.done
+          ? `<p class="hint-ok">✅ Tehtävä hoidettu Sanomaliikenne (HL7) -näkymässä.</p>`
+          : `<button class="btn-primary" data-action="goto-hl7">Avaa Sanomaliikenne (HL7) -näkymässä</button>`}
+      </div>`;
+  } else if (beat.type === 'incident') {
+    mainHtml = renderIncidentCard(beat);
+  } else if (beat.type === 'lunch') {
+    mainHtml = `
+      <div class="ticket-card fade-in">
+        <div class="ticket-badge badge-normal">Tauko</div>
+        <h3>🥪 Lounastauko</h3>
+        <p>Aamupäivä on ollut vilkas. Käyt syömässä ja tuulettamassa päätä hetken ennen iltapäivän ruuhkaa.</p>
+        <button class="btn-primary" data-action="flavor-lunch">Jatka päivää</button>
+      </div>`;
+  } else if (beat.type === 'report') {
+    mainHtml = `
+      <div class="ticket-card fade-in">
+        <div class="ticket-badge badge-normal">Iltapäivä</div>
+        <h3>📝 Päivän yhteenveto johdolle</h3>
+        <p>Kirjoitat lyhyen yhteenvedon päivän tapahtumista laboratorion johtoryhmälle. Rutiini, mutta tärkeä osa läpinäkyvää IT-toimintaa.</p>
+        <button class="btn-primary" data-action="flavor-report">Jatka päivää</button>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="tickets-layout">
+      <div class="tickets-main">
+        ${mainHtml}
+      </div>
+      <aside class="tickets-side">
+        <div class="side-box">
+          <div class="side-box-title">Tänään jäljellä</div>
+          <div class="side-box-value">${remaining} tapahtumaa</div>
+        </div>
+        <div class="side-box">
+          <div class="side-box-title">Käsitellyt tapahtumat</div>
+          <ul class="log-list">
+            ${state.log.length ? state.log.map(logEntryHtml).join('') : '<li class="log-empty">Ei vielä tapahtumia.</li>'}
+          </ul>
+        </div>
+      </aside>
+    </div>`;
+
+  if (beat.type === 'incident' && !state.incidentAnswered) {
+    startIncidentTimer();
+  }
+}
+
+function renderIncidentCard(beat) {
+  const inc = beat.incident;
+  if (!state.incidentAnswered) {
+    return `
+      <div class="ticket-card fade-in incident-card">
+        <div class="ticket-badge badge-urgent">Kiireellinen</div>
+        <h3>⚠️ ${inc.title}</h3>
+        <p>${inc.desc}</p>
+        <div class="timer-track"><div class="timer-fill" id="incidentTimerBar"></div></div>
+        <div class="option-list">
+          ${inc.options.map((opt, i) => `
+            <button class="option-card" data-action="answer-incident" data-index="${i}">
+              <span class="option-card-text">${opt.text}</span>
+            </button>`).join('')}
+        </div>
+      </div>`;
+  }
+  const opt = inc.options[state.incidentChosenIndex];
+  const cls = opt.quality === 'good' ? 'feedback-good' : opt.quality === 'bad' ? 'feedback-bad' : 'feedback-meh';
+  return `
+    <div class="ticket-card fade-in incident-card">
+      <div class="ticket-badge badge-urgent">Kiireellinen</div>
+      <h3>⚠️ ${inc.title}</h3>
+      <div class="feedback-box ${cls}">
+        ${state.incidentTimedOut ? '<p class="feedback-timeout">⏱️ Aika loppui kesken — järjestelmä valitsi oletuksena huonoimman vaihtoehdon.</p>' : ''}
+        <p>${opt.feedback}</p>
+      </div>
+      <button class="btn-primary" data-action="continue-incident">Jatka päivää</button>
+    </div>`;
+}
+
+// ===================== RENDER: VERKKO TAB =====================
+
+function networkSVG() {
+  const t1 = state.task1;
+  const deviceFill = t1.done ? '#3DDC97' : t1.ipCorrect ? '#F5A623' : '#5A6B78';
+  const deviceLineColor = t1.ipCorrect ? '#3DDC97' : '#5A6B78';
+  const deviceLineDash = t1.ipCorrect ? '' : 'stroke-dasharray="6 5"';
+  const vpnLineColor = t1.done ? '#3DDC97' : '#E85D5D';
+  const vpnLineDash = t1.done ? '' : 'stroke-dasharray="6 5"';
+  const deviceIpLabel = t1.ipCorrect ? NETWORK_IP_OPTIONS.find((o) => o.correct).value : 'IP: ei määritetty';
+  const vpnLabel = t1.done ? '🔒 VPN aktiivinen — aikarajoitettu' : 'VPN-yhteys ei muodostettu';
+
+  return `
+  <svg viewBox="0 0 900 520" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Verkkokaavio">
+    <rect x="20" y="210" width="150" height="60" rx="10" class="node-box" />
+    <text x="95" y="235" class="node-label" text-anchor="middle">Ulkoverkko</text>
+    <text x="95" y="252" class="node-label" text-anchor="middle">(operaattori)</text>
+
+    <line x1="170" y1="240" x2="230" y2="240" stroke="#3DDC97" stroke-width="3" />
+
+    <path d="M230 210 h90 a15 15 0 0 1 15 15 v30 a15 15 0 0 1 -15 15 h-90 a15 15 0 0 1 -15 -15 v-30 a15 15 0 0 1 15 -15 z" class="node-box-fw" />
+    <text x="290" y="235" class="node-label" text-anchor="middle">🧱 Palomuuri</text>
+    <text x="290" y="252" class="node-label-sm" text-anchor="middle">rajaa segmentit</text>
+
+    <path d="M320 225 C 345 175, 345 130, 370 100" fill="none" stroke="#3DDC97" stroke-width="2.5" />
+    <path d="M320 250 C 345 255, 345 260, 360 262" fill="none" stroke="#3DDC97" stroke-width="2.5" />
+
+    <rect x="370" y="40" width="200" height="110" rx="12" class="node-box-office" />
+    <text x="470" y="65" class="node-label" text-anchor="middle">💻 Toimistoverkko</text>
+    <text x="470" y="84" class="node-label-sm" text-anchor="middle">VLAN 10 — 10.20.10.0/24</text>
+    <text x="470" y="105" class="node-label-sm" text-anchor="middle">Vastaanotto · Arkisto</text>
+    <text x="470" y="122" class="node-label-sm" text-anchor="middle">Osastojen työasemat</text>
+
+    <rect x="360" y="190" width="500" height="230" rx="14" class="vlan-box" />
+    <text x="380" y="215" class="vlan-title">Laite-VLAN 30 — Analysaattorit — 10.20.30.0/24</text>
+
+    <rect x="390" y="235" width="190" height="55" rx="8" class="node-box-mw" />
+    <text x="485" y="257" class="node-label-sm" text-anchor="middle">🖧 Middleware</text>
+    <text x="485" y="274" class="node-label-sm" text-anchor="middle">Ajojenhallinta · .4</text>
+
+    <rect x="620" y="235" width="200" height="55" rx="8" class="node-box" />
+    <text x="720" y="257" class="node-label-sm" text-anchor="middle">🖥️ LIS-palvelin</text>
+    <text x="720" y="274" class="node-label-sm" text-anchor="middle">10.20.30.5</text>
+
+    <line x1="580" y1="262" x2="620" y2="262" stroke="#3DDC97" stroke-width="2.5" />
+
+    <rect x="390" y="330" width="190" height="55" rx="8" class="node-box-device" />
+    <text x="485" y="352" class="node-label-sm" text-anchor="middle">🩸 Analysaattori A</text>
+    <text x="485" y="369" class="node-label-sm" text-anchor="middle">10.20.30.21</text>
+
+    <line x1="485" y1="290" x2="485" y2="330" stroke="#3DDC97" stroke-width="2.5" />
+
+    <rect x="610" y="330" width="210" height="60" rx="8" fill="${deviceFill}" fill-opacity="0.18" stroke="${deviceFill}" stroke-width="2" />
+    <text x="715" y="353" class="node-label-sm" text-anchor="middle">🆕 Uusi analysaattori</text>
+    <text x="715" y="370" class="node-label-sm" text-anchor="middle">${deviceIpLabel}</text>
+
+    <line x1="580" y1="280" x2="612" y2="332" stroke="${deviceLineColor}" stroke-width="3" ${deviceLineDash} />
+
+    <rect x="600" y="440" width="240" height="58" rx="10" class="node-box-huolto" />
+    <text x="720" y="463" class="node-label-sm" text-anchor="middle">🛠️ Huolto (ulkoinen toimittaja)</text>
+    <text x="720" y="481" class="node-label-sm" text-anchor="middle">${vpnLabel}</text>
+
+    <path d="M720 440 C 720 415, 715 400, 715 392" fill="none" stroke="${vpnLineColor}" stroke-width="3" ${vpnLineDash} />
+  </svg>`;
+}
+
+function renderVerkko() {
+  const el = document.getElementById('panel-verkko');
+  const beat = state.gameOver ? null : currentBeat();
+  const showTask = !!beat && beat.type === 'task1' && !state.task1.done;
+
+  let taskHtml = '';
+  if (showTask) {
+    if (!state.task1.ipCorrect) {
+      taskHtml = `
+        <div class="task-step fade-in">
+          <h4>Vaihe 1 / 2 — Valitse laitteelle kiinteä IP-osoite</h4>
+          <p class="task-step-desc">Analysaattorit elävät omassa eristetyssä <code>laite-VLAN 30:ssa</code>, aliverkossa <code>10.20.30.0/24</code> — erillään toimistoverkosta (VLAN 10). Yhdyskäytävä on <code>.1</code>, laitteille varattu alue on <code>.10–.199</code> ja <code>.255</code> on broadcast-osoite.</p>
+          <div class="option-list">
+            ${NETWORK_IP_OPTIONS.map((o, i) => `
+              <button class="option-card ${state.task1.wrongIpTries.indexOf(i) !== -1 ? 'option-card-wrong' : ''}" data-action="choose-ip" data-index="${i}">
+                <span class="option-card-text option-mono">${o.value}</span>
+              </button>`).join('')}
+          </div>
+          ${state.task1.ipChosen !== null && !NETWORK_IP_OPTIONS[state.task1.ipChosen].correct
+            ? `<div class="feedback-box feedback-bad">${NETWORK_IP_OPTIONS[state.task1.ipChosen].feedback}</div>` : ''}
+        </div>`;
+    } else if (!state.task1.remoteCorrect) {
+      taskHtml = `
+        <div class="task-step fade-in">
+          <div class="feedback-box feedback-good">${NETWORK_IP_OPTIONS.find(o => o.correct).feedback}</div>
+          <h4>Vaihe 2 / 2 — Järjestä huollolle turvallinen etäyhteys</h4>
+          <p class="task-step-desc">Laitevalmistajan huolto tarvitsee etädiagnostiikkaa varten pääsyn analysaattoriin. Huolto ei koskaan ota suoraa yhteyttä laitteen IP-osoitteeseen avoimen internetin yli — yhteys pitää järjestää hallitusti. Minkä ratkaisun valitset?</p>
+          <div class="option-list">
+            <button class="option-card ${state.task1.wrongRemoteTries.indexOf(0) !== -1 ? 'option-card-wrong' : ''}" data-action="choose-remote" data-index="0"><span class="option-card-text">Avaa pysyvä porttiohjaus suoraan analysaattorin IP-osoitteeseen julkisesta internetistä</span></button>
+            <button class="option-card ${state.task1.wrongRemoteTries.indexOf(1) !== -1 ? 'option-card-wrong' : ''}" data-action="choose-remote" data-index="1"><span class="option-card-text">Myönnä huollolle aikarajoitettu, valvottu VPN-yhteys, joka ulottuu vain tähän analysaattoriin laite-VLANissa</span></button>
+            <button class="option-card ${state.task1.wrongRemoteTries.indexOf(2) !== -1 ? 'option-card-wrong' : ''}" data-action="choose-remote" data-index="2"><span class="option-card-text">Myönnä huollolle VPN-yhteys koko laboratorion verkkoon, jotta homma hoituu varmasti</span></button>
+            <button class="option-card ${state.task1.wrongRemoteTries.indexOf(3) !== -1 ? 'option-card-wrong' : ''}" data-action="choose-remote" data-index="3"><span class="option-card-text">Estä kaikki etäyhteydet ja pyydä huoltoa tulemaan paikan päälle</span></button>
+          </div>
+          ${state.task1.remoteChosen !== null && !REMOTE_ACCESS_OPTIONS[state.task1.remoteChosen].correct
+            ? `<div class="feedback-box feedback-bad">${REMOTE_ACCESS_OPTIONS[state.task1.remoteChosen].feedback}</div>` : ''}
+        </div>`;
+    } else {
+      taskHtml = `
+        <div class="task-step fade-in">
+          <div class="feedback-box feedback-good">${REMOTE_ACCESS_OPTIONS.find(o => o.correct).feedback}</div>
+          <p class="hint-ok">✅ Analysaattori on kytketty laite-VLAN 30:een middlewaren kautta, ja huollon etäyhteys on rajattu turvalliseksi VPN-tunneliksi.</p>
+          <button class="btn-primary" data-action="finish-task1">Valmis, palaa tiketteihin</button>
+        </div>`;
+    }
+  } else if (state.gameOver) {
+    taskHtml = `<p class="empty-state">Työpäivä on päättynyt. Verkko jää tähän tilaan huomiseen asti.</p>`;
+  } else if (beat.type !== 'task1') {
+    taskHtml = `<p class="empty-state">Ei aktiivisia verkkotehtäviä juuri nyt. Kaavio päivittyy automaattisesti, kun uusia laitteita liitetään verkkoon.</p>`;
+  }
+
+  el.innerHTML = `
+    <div class="panel-inner">
+      <h3 class="panel-title">Verkko ja palomuuri</h3>
+      <div class="network-diagram-wrap">${networkSVG()}</div>
+      <div class="legend">
+        <span><i class="legend-dot" style="background:#3DDC97"></i>Yhteys kunnossa</span>
+        <span><i class="legend-dot" style="background:#F5A623"></i>Osittain kesken</span>
+        <span><i class="legend-dot" style="background:#5A6B78"></i>Ei yhteyttä</span>
+        <span><i class="legend-dot" style="background:#E85D5D"></i>Estetty / riski</span>
+      </div>
+      ${taskHtml}
+    </div>`;
+}
+
+// ===================== RENDER: HL7 TAB =====================
+
+function renderHL7() {
+  const el = document.getElementById('panel-hl7');
+  const beat = state.gameOver ? null : currentBeat();
+  const showTask = !!beat && beat.type === 'task2' && !state.task2.done;
+
+  let taskHtml = '';
+  if (showTask) {
+    taskHtml = `
+      <div class="task-step fade-in">
+        <h4>Tunnista ja kytke segmentit oikein</h4>
+        <p class="task-step-desc">Valitse jokaiselle HL7-segmentille oikea kohde laboratoriojärjestelmässä (LIS). Käytä apuna yllä olevia sanomaesimerkkejä.</p>
+        <div class="mapping-grid">
+          ${HL7_SEGMENTS.map((f) => `
+            <div class="mapping-row">
+              <div class="mapping-source">
+                <div class="mapping-source-label">${f.label}</div>
+                <div class="mapping-source-hint">${escapeHtml(f.example)}</div>
+              </div>
+              <div class="mapping-arrow">→</div>
+              <select class="mapping-select" data-action="set-mapping" data-field="${f.id}">
+                ${HL7_TARGET_OPTIONS.map((o) => `<option value="${o.value}" ${state.task2.mapping[f.id] === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+              </select>
+            </div>`).join('')}
+        </div>
+        <button class="btn-primary" data-action="verify-mapping">Vahvista kytkennät</button>
+        ${state.task2.lastErrors.length ? `
+          <div class="feedback-box feedback-bad">
+            ${state.task2.lastErrors.map(e => `<p>${e.message}</p>`).join('')}
+          </div>` : ''}
+      </div>`;
+  } else if (!!beat && beat.type === 'task2' && state.task2.done) {
+    taskHtml = `
+      <div class="task-step fade-in">
+        <div class="feedback-box feedback-good">Kaikki segmentit kytkeytyivät oikein — lähete (ORM^O01) tunnistetaan ja tulosvastaus (ORU^R01) palautuu oikealle lähettäjälle oikean potilaan tiedoilla ja oikeilla mittausarvoilla.</div>
+        <button class="btn-primary" data-action="finish-task2">Valmis, palaa tiketteihin</button>
+      </div>`;
+  } else if (state.gameOver) {
+    taskHtml = `<p class="empty-state">Työpäivä on päättynyt. Voit silti tutustua alla oleviin HL7-sanomaesimerkkeihin.</p>`;
+  } else {
+    taskHtml = `<p class="empty-state">Ei aktiivisia sanomatehtäviä juuri nyt. Voit silti tutustua alla oleviin HL7-sanomaesimerkkeihin.</p>`;
+  }
+
+  el.innerHTML = `
+    <div class="panel-inner">
+      <h3 class="panel-title">Sanomaliikenne (HL7)</h3>
+      <div class="hl7-explainer">
+        <div class="hl7-explainer-card">
+          <div class="hl7-explainer-icon">📨</div>
+          <div class="hl7-explainer-label">ORM^O01 — lähete sisään</div>
+          <p>Kun lähettävä yksikkö tilaa tutkimuksen, järjestelmään saapuu ORM-sanoma — vähän kuin tilauskuitti. Sanoma koostuu segmenteistä: <code>PID</code> kertoo kuka, <code>OBR</code> kertoo mitä tutkimusta pyydettiin.</p>
+        </div>
+        <div class="hl7-explainer-arrow">⇄</div>
+        <div class="hl7-explainer-card">
+          <div class="hl7-explainer-icon">📤</div>
+          <div class="hl7-explainer-label">ORU^R01 — tulos ulos</div>
+          <p>Kun tutkimus on valmis, järjestelmä lähettää ORU-sanoman. Mukana kulkee edelleen <code>PID</code> ja <code>OBR</code>, mutta lisäksi yksi tai useampi <code>OBX</code>-segmentti — jokainen kantaa yhden mittaustuloksen.</p>
+        </div>
+      </div>
+      <div class="hl7-msgs">
+        <div class="hl7-msg-block">
+          <div class="hl7-msg-title">Saapuva lähete (ORM^O01)</div>
+          ${hl7MsgHtml(HL7_ORM_EXAMPLE)}
+        </div>
+        <div class="hl7-msg-block">
+          <div class="hl7-msg-title">Lähtevä tulosvastaus (ORU^R01)</div>
+          ${hl7MsgHtml(HL7_ORU_EXAMPLE)}
+        </div>
+      </div>
+      ${taskHtml}
+    </div>`;
+}
+
+// ===================== RENDER: END OF DAY =====================
+
+function verdictFor(uptime, stress) {
+  let title, text;
+  if (uptime >= 85) {
+    title = '🏆 Loistava päivä valvomossa!';
+    text = 'Labra pyöri kuin öljytty kone koko päivän. Nopeat, harkitut päätökset pitivät sekä laitteet että potilasturvallisuuden kunnossa.';
+  } else if (uptime >= 65) {
+    title = '✅ Työpäivä selätetty';
+    text = 'Päivä sujui pääosin hyvin, vaikka matkalla oli muutama säätöä vaatinut hetki. Labra toimi läpi päivän.';
+  } else if (uptime >= 40) {
+    title = '😅 Rytinällä mutta selvisit';
+    text = 'Päivä oli rankka ja moni asia meni nipin napin — mutta labra pysyi pystyssä, ja jokainen virhe opetti jotain seuraavaa kertaa varten.';
+  } else {
+    title = '🔥 Labra kaatui pahasti tänään';
+    text = 'Liian monta riskipäätöstä kasautui, ja toimintavarmuus romahti. Huomenna kannattaa palata perusasioihin: rajattu pääsy, nopea vianmääritys ja potilasturvallisuus ensin.';
+  }
+  let stressNote = '';
+  if (stress >= 70) {
+    stressNote = 'Oma jaksaminenkin alkoi olla koetuksella päivän aikana — huomenna kannattaa muistaa myös tauot.';
+  } else if (stress <= 30) {
+    stressNote = 'Pysyit rauhallisena koko päivän — hyvää itsensä johtamista kiireenkin keskellä.';
+  }
+  return { title: title, text: text, stressNote: stressNote };
+}
+
+function renderEndOfDay() {
+  const overlay = document.getElementById('endOfDayOverlay');
+  if (!state.gameOver) {
+    overlay.classList.add('hidden');
+    return;
+  }
+  overlay.classList.remove('hidden');
+  const v = verdictFor(state.uptime, state.stress);
+  document.getElementById('endOfDayContent').innerHTML = `
+    <h2 class="end-title">${v.title}</h2>
+    <p class="end-text">${v.text}</p>
+    ${v.stressNote ? `<p class="end-text end-text-muted">${v.stressNote}</p>` : ''}
+    <div class="end-stats">
+      <div class="end-stat">
+        <div class="end-stat-label">Toimintavarmuus</div>
+        <div class="end-stat-value" style="color:${uptimeColor(state.uptime)}">${Math.round(state.uptime)}%</div>
+      </div>
+      <div class="end-stat">
+        <div class="end-stat-label">Stressitaso</div>
+        <div class="end-stat-value" style="color:${stressColor(state.stress)}">${Math.round(state.stress)}%</div>
+      </div>
+    </div>
+    <div class="end-log-title">Päivän kulku</div>
+    <ul class="log-list end-log-list">
+      ${state.log.slice().reverse().map(logEntryHtml).join('')}
+    </ul>
+    <button class="btn-primary" data-action="close-day">Sulje</button>`;
+}
+
+// ===================== MASTER RENDER =====================
+
+function renderAll() {
+  renderHeader();
+  document.querySelectorAll('.tab-panel').forEach((p) => {
+    p.classList.toggle('hidden', p.id !== 'panel-' + state.activeTab);
+  });
+  renderTickets();
+  renderVerkko();
+  renderHL7();
+  renderEndOfDay();
+}
+
+// ===================== EVENT DELEGATION =====================
+
+function handleClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const index = btn.dataset.index !== undefined ? parseInt(btn.dataset.index, 10) : null;
+
+  switch (action) {
+    case 'flavor-intro':
+      continueFlavor(0, 0, 'Päivä alkoi rauhallisesti — kahvikuppi kädessä valvomo herää eloon.');
+      break;
+    case 'flavor-lunch':
+      continueFlavor(0, -8, 'Lounastauko rauhoitti mieltä ennen iltapäivän ruuhkaa.');
+      break;
+    case 'flavor-report':
+      continueFlavor(2, 3, 'Päivän yhteenveto kirjoitettiin ajallaan johtoryhmälle.');
+      break;
+    case 'goto-verkko':
+      setActiveTab('verkko');
+      break;
+    case 'goto-hl7':
+      setActiveTab('hl7');
+      break;
+    case 'choose-ip':
+      chooseIp(index);
+      break;
+    case 'choose-remote':
+      chooseRemote(index);
+      break;
+    case 'finish-task1':
+      finishTask1();
+      break;
+    case 'verify-mapping':
+      verifyMapping();
+      break;
+    case 'finish-task2':
+      finishTask2();
+      break;
+    case 'answer-incident':
+      answerIncident(index, false);
+      break;
+    case 'continue-incident':
+      continueAfterIncident();
+      break;
+    case 'close-day':
+      window.location.reload();
+      break;
+    default:
+      break;
+  }
+}
+
+function handleChange(e) {
+  const sel = e.target.closest('[data-action="set-mapping"]');
+  if (!sel) return;
+  setMapping(sel.dataset.field, sel.value);
+}
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+  });
+}
+
+function init() {
+  newGame();
+  initTabs();
+  document.addEventListener('click', handleClick);
+  document.addEventListener('change', handleChange);
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
